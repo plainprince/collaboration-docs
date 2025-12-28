@@ -1,4 +1,4 @@
-# Sync Docs - Real-time Collaborative Document Editor
+# Collaboration Docs - Real-time Collaborative Document Editor
 
 A real-time collaborative document editor built with modern web technologies, featuring CRDT-based conflict-free editing, Git-based version control, and WebSocket-powered live collaboration.
 
@@ -215,7 +215,7 @@ Each document has its own Git repository:
 ├── setup_db.js            # Database initialization script
 ├── package.json           # Dependencies and scripts
 ├── document_storage/      # Document repositories (created at runtime)
-├── syncdocs.db            # SQLite database (created by setup_db.js)
+├── collaboration-docs.db   # SQLite database (created by setup_db.js)
 └── src/
     ├── index.html         # Main HTML file
     ├── main.js            # Frontend application logic

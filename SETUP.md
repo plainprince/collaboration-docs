@@ -57,7 +57,7 @@ node setup_db.js
 ```
 
 This creates:
-- `syncdocs.db` SQLite database
+- `collaboration-docs.db` SQLite database
 - `users` table
 - `documents` table
 - `permissions` table
@@ -98,7 +98,7 @@ NODE_ENV=development
 
 ### Database Location
 
-Default: `syncdocs.db` in project root
+Default: `collaboration-docs.db` in project root
 
 To change: Modify `db.js`
 
@@ -125,14 +125,14 @@ Vite will automatically use next available port (5174, 5175, etc.)
 
 **Reset database:**
 ```bash
-rm syncdocs.db
+rm collaboration-docs.db
 node setup_db.js
 ```
 
 **Check database:**
 ```bash
-sqlite3 syncdocs.db ".tables"
-sqlite3 syncdocs.db "SELECT * FROM users;"
+sqlite3 collaboration-docs.db ".tables"
+sqlite3 collaboration-docs.db "SELECT * FROM users;"
 ```
 
 ### Git Errors
@@ -240,7 +240,7 @@ node --inspect server.js
 
 ```bash
 # Open SQLite shell
-sqlite3 syncdocs.db
+sqlite3 collaboration-docs.db
 
 # Useful commands:
 .tables          # List tables
@@ -262,7 +262,7 @@ git show HEAD
 ### "Cannot read property of undefined"
 
 - Check that user is logged in
-- Verify localStorage has `syncdocs_user`
+- Verify localStorage has `collaboration_docs_user`
 - Check API responses in Network tab
 
 ### "Document not found"

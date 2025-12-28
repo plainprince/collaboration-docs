@@ -141,7 +141,7 @@ function showConfirm(title, message) {
 
 // Auth
 function checkAuth() {
-    const storedUser = localStorage.getItem('syncdocs_user');
+    const storedUser = localStorage.getItem('collaboration_docs_user');
     if (storedUser) {
         state.user = JSON.parse(storedUser);
         initDashboard();
@@ -155,7 +155,7 @@ document.getElementById('login-btn').addEventListener('click', async () => {
   const password = document.getElementById('password').value;
   try {
     state.user = await api('/login', 'POST', { username, password });
-    localStorage.setItem('syncdocs_user', JSON.stringify(state.user));
+    localStorage.setItem('collaboration_docs_user', JSON.stringify(state.user));
     initDashboard();
   } catch (err) {
     showAlert('Login failed: ' + err.message, 'error');
@@ -167,7 +167,7 @@ document.getElementById('register-btn').addEventListener('click', async () => {
   const password = document.getElementById('password').value;
   try {
     state.user = await api('/register', 'POST', { username, password });
-    localStorage.setItem('syncdocs_user', JSON.stringify(state.user));
+    localStorage.setItem('collaboration_docs_user', JSON.stringify(state.user));
     initDashboard();
   } catch (err) {
     showAlert('Register failed: ' + err.message, 'error');
@@ -177,7 +177,7 @@ document.getElementById('register-btn').addEventListener('click', async () => {
 document.getElementById('logout-btn').addEventListener('click', () => {
   state.user = null;
   state.currentDoc = null;
-  localStorage.removeItem('syncdocs_user');
+  localStorage.removeItem('collaboration_docs_user');
   if (state.editor) state.editor.destroy();
   if (state.provider) state.provider.destroy();
   showScreen('auth');

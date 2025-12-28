@@ -2,7 +2,7 @@
 
 ## System Overview
 
-Sync Docs is a real-time collaborative document editor that combines CRDT-based conflict resolution with Git-based version control. The system is designed to handle multiple simultaneous editors while maintaining data consistency and providing full version history.
+Collaboration Docs is a real-time collaborative document editor that combines CRDT-based conflict resolution with Git-based version control. The system is designed to handle multiple simultaneous editors while maintaining data consistency and providing full version history.
 
 ## Component Architecture
 
@@ -11,7 +11,7 @@ Sync Docs is a real-time collaborative document editor that combines CRDT-based 
 #### 1. Authentication System (`src/main.js`)
 - **LocalStorage-based Session**: User credentials stored in browser localStorage
 - **Session Persistence**: Automatically logs in user on page reload
-- **Key**: `syncdocs_user` (stores user object with id and username)
+- **Key**: `collaboration_docs_user` (stores user object with id and username)
 
 #### 2. Document Management
 - **Document List**: Fetches user's documents from `/api/documents`

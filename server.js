@@ -52,8 +52,8 @@ async function initDocumentRepo(docId) {
   }
   const git = getDocumentGit(docId);
   await git.init();
-  await git.addConfig('user.name', 'Sync Docs Bot');
-  await git.addConfig('user.email', 'bot@syncdocs.local');
+  await git.addConfig('user.name', 'Collaboration Docs Bot');
+  await git.addConfig('user.email', 'bot@collaboration-docs.local');
   return git;
 }
 
