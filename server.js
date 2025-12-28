@@ -27,6 +27,63 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
+// Initialize database tables if they don't exist
+async function initializeDatabase() {
+  try {
+    // Check if users table exists
+    const tablesCheck = await db.query(`
+      SELECT name FROM sqlite_master 
+      WHERE type='table' AND name IN ('users', 'documents', 'permissions')
+    `);
+    
+    const existingTables = tablesCheck.rows.map(row => row.name);
+    
+    if (!existingTables.includes('users')) {
+      console.log("Initializing database tables...");
+      
+      // Users table
+      await db.query(`
+        CREATE TABLE IF NOT EXISTS users (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          username TEXT UNIQUE NOT NULL,
+          password TEXT NOT NULL
+        );
+      `);
+      
+      // Documents table
+      await db.query(`
+        CREATE TABLE IF NOT EXISTS documents (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          path TEXT NOT NULL,
+          fs_path TEXT UNIQUE NOT NULL,
+          owner_id INTEGER REFERENCES users(id),
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+      
+      // Permissions table
+      await db.query(`
+        CREATE TABLE IF NOT EXISTS permissions (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          document_id INTEGER REFERENCES documents(id) ON DELETE CASCADE,
+          user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+          role TEXT NOT NULL CHECK (role IN ('owner', 'writer', 'reader')),
+          UNIQUE(document_id, user_id)
+        );
+      `);
+      
+      console.log("Database tables initialized successfully.");
+    }
+  } catch (err) {
+    console.error("Error initializing database:", err);
+    // Don't exit - let server start anyway, but log the error
+  }
+}
+
+// Initialize database on startup
+initializeDatabase();
+
 // Git Setup - Base directory for all document repos
 const STORAGE_PATH = path.join(__dirname, 'document_storage');
 if (!fs.existsSync(STORAGE_PATH)) {
