@@ -1,0 +1,37 @@
+{
+  "name": "collaboration-docs",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start:be": "bun run server.js",
+    "dev:be": "bun run server.js",
+    "dev:fe": "bun run vite dev",
+    "both": "concurrently \"bun run dev:be\" \"bun run dev:fe\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "pg": "^8.16.3",
+    "simple-git": "^3.30.0",
+    "socket.io": "^4.8.3",
+    "sqlite3": "^5.1.7",
+    "y-socket.io": "^1.1.3",
+    "yjs": "^13.6.28"
+  },
+  "devDependencies": {
+    "@tiptap/core": "^3.14.0",
+    "@tiptap/extension-collaboration": "^3.14.0",
+    "@tiptap/extension-collaboration-cursor": "^3.0.0",
+    "@tiptap/starter-kit": "^3.14.0",
+    "@tiptap/y-tiptap": "^3.0.1",
+    "socket.io-client": "^4.8.3",
+    "vite": "^7.3.0",
+    "y-prosemirror": "^1.3.7"
+  }
+}

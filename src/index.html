@@ -1,0 +1,131 @@
+
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>Sync Docs - Real-time Collaborative Editor</title>
+      <link rel="stylesheet" href="./style.css" />
+    </head>
+    <body>
+      <div id="app">
+        <div id="auth-screen">
+          <h1>Sync Docs Login</h1>
+          <input type="text" id="username" placeholder="Username" />
+          <input type="password" id="password" placeholder="Password" />
+          <button id="login-btn">Login</button>
+          <button id="register-btn">Register</button>
+        </div>
+
+        <div id="dashboard-screen" class="hidden">
+          <header>
+            <span id="welcome-msg"></span>
+            <button id="logout-btn">Logout</button>
+          </header>
+          <h2>My Documents</h2>
+          <div class="controls">
+            <input type="text" id="new-doc-name" placeholder="New Document Name" />
+            <button id="create-doc-btn">Create</button>
+          </div>
+          <ul id="doc-list"></ul>
+        </div>
+
+        <div id="editor-screen" class="hidden">
+          <header>
+            <button id="back-btn">Back</button>
+            <span id="doc-title" style="font-weight: bold; font-size: 1.2em;"></span>
+            <div id="collaborators"></div>
+            <button id="save-btn">Save</button>
+            <button id="share-btn">Share</button>
+            <button id="history-btn">History</button>
+          </header>
+          <div id="editor-container">
+            <!-- Tiptap toolbar with SVGs -->
+            <div class="menu-bar">
+              <button class="menu-btn" data-action="bold" title="Bold">
+                <svg viewBox="0 0 24 24"><path d="M15.6 11.8c1-.7 1.6-1.8 1.6-2.8a4 4 0 0 0-4-4H7v14h7c2.1 0 3.8-1.7 3.8-3.8 0-1.5-.9-2.9-2.2-3.4zM10 7.5h3a1.5 1.5 0 1 1 0 3h-3v-3zm3.5 9H10v-3h3.5a1.5 1.5 0 1 1 0 3z"/></svg>
+              </button>
+              <button class="menu-btn" data-action="italic" title="Italic">
+                <svg viewBox="0 0 24 24"><path d="M10 4v3h2.21l-3.42 8H6v3h8v-3h-2.21l3.42-8H18V4z"/></svg>
+              </button>
+              <button class="menu-btn" data-action="strike" title="Strikethrough">
+                <svg viewBox="0 0 24 24"><path d="M10 19h4v-3h-4v3zM5 4v3h5v3h4V7h5V4H5zM3 14h18v-2H3v2z"/></svg>
+              </button>
+              <button class="menu-btn" data-action="code" title="Inline Code">
+                <svg viewBox="0 0 24 24"><path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/></svg>
+              </button>
+              <span class="separator">|</span>
+              <button class="menu-btn" data-action="paragraph" title="Paragraph">
+                <svg viewBox="0 0 24 24"><path d="M4 5v14h2v-7h2V5H4zm6 0v14h2v-7h2V5h-4z"/></svg> <!-- Placeholder for P -->
+              </button>
+              <button class="menu-btn" data-action="heading" data-level="1" title="Heading 1">H1</button>
+              <button class="menu-btn" data-action="heading" data-level="2" title="Heading 2">H2</button>
+              <span class="separator">|</span>
+              <button class="menu-btn" data-action="bulletList" title="Bullet List">
+                <svg viewBox="0 0 24 24"><path d="M4 10.5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5zm0-6c-.83 0-1.5.67-1.5 1.5S3.17 7.5 4 7.5 5.5 6.83 5.5 6 4.83 4.5 4 4.5zm0 12c-.83 0-1.5.68-1.5 1.5s.68 1.5 1.5 1.5 1.5-.68 1.5-1.5-.67-1.5-1.5-1.5zM7 19h14v-2H7v2zm0-6h14v-2H7v2zm0-8v2h14V5H7z"/></svg>
+              </button>
+              <button class="menu-btn" data-action="orderedList" title="Ordered List">
+                <svg viewBox="0 0 24 24"><path d="M2 17h2v.5H3v1h1v.5H2v1h3v-4H2v1zm1-9h1V4H2v1h1v3zm-1 3h1.8L2 13.1v.9h3v-1H3.2L5 10.9V10H2v1zm5-6v2h14V5H7zm0 14h14v-2H7v2zm0-6h14v-2H7v2z"/></svg>
+              </button>
+              <button class="menu-btn" data-action="blockquote" title="Quote">
+                <svg viewBox="0 0 24 24"><path d="M6 17h3l2-4V7H5v6h3zm8 0h3l2-4V7h-6v6h3z"/></svg>
+              </button>
+              <button class="menu-btn" data-action="codeBlock" title="Code Block">
+                <svg viewBox="0 0 24 24"><path d="M14 17H4v2h10v-2zm6-8H4v2h16V9zM4 15h16v-2H4v2zM4 5v2h16V5H4z"/></svg>
+              </button>
+              <span class="separator">|</span>
+              <button class="menu-btn" data-action="undo" title="Undo">
+                <svg viewBox="0 0 24 24"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg>
+              </button>
+              <button class="menu-btn" data-action="redo" title="Redo">
+                <svg viewBox="0 0 24 24"><path d="M18.4 10.6C16.55 9 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/></svg>
+              </button>
+            </div>
+            <!-- Tiptap will be mounted here -->
+            <div class="editor"></div>
+          </div>
+        </div>
+
+        <!-- Modals -->
+        <div id="share-modal" class="modal hidden">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h3>Share Document</h3>
+                <input type="text" id="share-username" placeholder="Username to share with">
+                <select id="share-role">
+                    <option value="owner">Owner</option>
+                    <option value="writer">Writer</option>
+                    <option value="reader">Reader</option>
+                </select>
+                <button id="confirm-share">Share</button>
+            </div>
+        </div>
+
+        <div id="history-modal" class="modal hidden">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h3>History</h3>
+                <ul id="history-list"></ul>
+            </div>
+        </div>
+
+        <!-- Custom Alert (Toast) -->
+        <div id="custom-alert" class="custom-alert hidden"></div>
+
+        <!-- Custom Confirm Modal -->
+        <div id="custom-confirm" class="modal hidden">
+            <div class="modal-content confirm-modal">
+                <h3 id="confirm-title">Confirm</h3>
+                <p id="confirm-message"></p>
+                <div class="confirm-buttons">
+                    <button id="confirm-cancel" class="secondary-btn">Cancel</button>
+                    <button id="confirm-ok" class="primary-btn">OK</button>
+                </div>
+            </div>
+        </div>
+
+      </div>
+      <script type="module" src="./main.js"></script>
+    </body>
+    </html>
+    
