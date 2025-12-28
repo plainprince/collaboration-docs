@@ -218,8 +218,8 @@ button:hover {
     user-select: none;
     white-space: nowrap;
     z-index: 1;
-    color: #fff !important; /* White text for better contrast */
-    background-color: rgba(0, 0, 0, 0.8) !important; /* Dark semi-transparent background */
+    /* Colors will be set inline via JavaScript */
+    color: #fff; /* Default white text */
     border: 1px solid rgba(255, 255, 255, 0.3);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }

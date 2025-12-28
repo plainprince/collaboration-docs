@@ -245,11 +245,8 @@ app.get('/api/documents/:id/history', async (req, res) => {
     const git = getDocumentGit(id);
     const log = await git.log();
     
-    // Filter out rollback/reset commits to show clean history
-    const filteredLog = log.all.filter(commit => 
-      !commit.message.startsWith('Rollback ') && 
-      !commit.message.startsWith('Reset ')
-    );
+    // Show all commits (rollback commits are now regular commits that can be undone)
+    const filteredLog = log.all;
     
     res.json(filteredLog);
   } catch (err) {
@@ -257,7 +254,7 @@ app.get('/api/documents/:id/history', async (req, res) => {
   }
 });
 
-// Rollback (Hard reset to commit - truly removes history)
+// Rollback (Checkout content from commit and commit as new commit - can be undone)
 app.post('/api/documents/:id/rollback', async (req, res) => {
   const { id } = req.params;
   const { hash } = req.body;
@@ -266,10 +263,58 @@ app.post('/api/documents/:id/rollback', async (req, res) => {
     const docRes = await db.query('SELECT fs_path FROM documents WHERE id = $1', [id]);
     if (docRes.rows.length === 0) return res.status(404).send('Doc not found');
     
+    const fsPath = docRes.rows[0].fs_path;
+    const docPath = getDocumentPath(id);
+    const fullPath = path.join(docPath, fsPath);
     const git = getDocumentGit(id);
     
-    // Hard reset to the target commit - this removes all commits after it
-    await git.reset(['--hard', hash]);
+    // Get current HEAD to ensure we're not resetting
+    const currentLog = await git.log();
+    const currentHead = currentLog.latest?.hash;
+    
+    // Get the file content from the target commit
+    let fileContent = '';
+    try {
+      fileContent = await git.show([`${hash}:${fsPath}`]);
+    } catch (showErr) {
+      // File might be empty at creation
+      fileContent = '';
+    }
+    
+    // Read current file content to check if there are changes
+    let currentContent = '';
+    if (fs.existsSync(fullPath)) {
+      currentContent = fs.readFileSync(fullPath, 'utf8');
+    }
+    
+    // Write the content to the file
+    fs.writeFileSync(fullPath, fileContent);
+    
+    // Get commit info for better message
+    let commitMessage = 'Revert to previous version';
+    try {
+      const commitInfo = await git.show([hash, '--format=%s', '--no-patch']);
+      commitMessage = `Revert to: ${commitInfo.trim().substring(0, 50)}`;
+    } catch (err) {
+      // Use default message if we can't get commit info
+    }
+    
+    // Stage the file
+    await git.add(fsPath);
+    
+    // Check if there are changes to commit
+    const status = await git.status();
+    const hasChanges = status.modified.includes(fsPath) || 
+                       status.not_added.includes(fsPath) || 
+                       (currentContent !== fileContent);
+    
+    if (hasChanges) {
+      // Commit the rollback (this creates a new commit, preserving history)
+      await git.commit(commitMessage);
+    } else {
+      // Even if content is the same, create an empty commit to mark the rollback
+      await git.commit(commitMessage, ['--allow-empty']);
+    }
     
     res.json({ success: true });
   } catch (err) {

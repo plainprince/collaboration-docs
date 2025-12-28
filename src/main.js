@@ -21,10 +21,34 @@ const CollaborationCursor = Extension.create({
       render: user => {
         const cursor = document.createElement('span');
         cursor.classList.add('collaboration-cursor__caret');
-        cursor.setAttribute('style', `border-color: ${user.color}`);
+        const bgColor = user.color || '#8ab4f8';
+        cursor.setAttribute('style', `border-color: ${bgColor}`);
+        
         const label = document.createElement('div');
         label.classList.add('collaboration-cursor__label');
-        label.setAttribute('style', `background-color: ${user.color}`);
+        
+        // Set background color - use the user's color with good opacity
+        label.style.backgroundColor = bgColor;
+        label.style.opacity = '0.9';
+        
+        // Determine text color based on HSL lightness (simpler than RGB conversion)
+        // For HSL colors, check the lightness value
+        let textColor = '#fff'; // Default to white
+        if (bgColor.startsWith('hsl')) {
+          const hslMatch = bgColor.match(/hsl\(\d+,\s*\d+%,\s*(\d+)%\)/);
+          if (hslMatch) {
+            const lightness = parseInt(hslMatch[1]);
+            // If lightness is above 60%, use dark text, otherwise light text
+            textColor = lightness > 60 ? '#000' : '#fff';
+          }
+        } else {
+          // For hex colors, use white text (most colors will be dark enough)
+          textColor = '#fff';
+        }
+        
+        label.style.color = textColor;
+        label.style.borderColor = `rgba(255, 255, 255, 0.3)`;
+        
         label.insertBefore(document.createTextNode(user.name), null);
         cursor.insertBefore(label, null);
         return cursor;
@@ -615,7 +639,7 @@ document.getElementById('history-btn').addEventListener('click', async () => {
             btn.addEventListener('click', async () => {
                 const confirmed = await showConfirm(
                     'Rollback Document', 
-                    'Are you sure you want to rollback to this version? This action cannot be undone and will remove all changes after this point.'
+                    'Are you sure you want to rollback to this version? This will restore the document to this state. You can undo this rollback later if needed.'
                 );
                 if(confirmed) {
                     try {
