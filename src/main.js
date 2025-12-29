@@ -355,11 +355,12 @@ async function openDocument(id, name) {
         if (isReadOnly) return; // Don't save if read-only
         const content = editor.getHTML();
         try {
+          // Per-character autosave (file write immediately, git commit debounced on server)
           await api(`/documents/${id}/save`, 'POST', { content, userId: state.user.id });
         } catch(err) {
           console.error('Autosave failed:', err);
         }
-    }, 60000), // 1 minute debounce
+    }, 100), // Very short debounce for per-character updates (100ms)
       });
       
       // Hide toolbar and disable buttons for readers
@@ -569,8 +570,9 @@ document.getElementById('save-btn').addEventListener('click', async () => {
     }
     const content = state.editor.getHTML();
     try {
-      await api(`/documents/${state.currentDoc.id}/save`, 'POST', { content, userId: state.user.id });
-      showAlert('Document saved successfully', 'success');
+      // Manual save - triggers immediate git commit
+      await api(`/documents/${state.currentDoc.id}/save-now`, 'POST', { content, userId: state.user.id });
+      showAlert('Document saved and committed', 'success');
     } catch(err) {
       showAlert('Save failed: ' + err.message, 'error');
     }

@@ -382,8 +382,88 @@ app.post('/api/documents/:id/share', async (req, res) => {
   }
 });
 
-// Git lock management
-const gitLocks = new Map();
+// File write queue and git commit debouncing
+const fileWriteQueue = new Map(); // docId -> { content, timeout }
+const gitCommitTimers = new Map(); // docId -> timeout
+const gitLocks = new Map(); // docId -> boolean
+
+// Write file immediately (no git commit)
+async function writeFileToDisk(docId, content) {
+    try {
+        const docRes = await db.query('SELECT fs_path FROM documents WHERE id = $1', [docId]);
+        if (docRes.rows.length === 0) return false;
+        
+        const fsPath = docRes.rows[0].fs_path;
+        const docPath = getDocumentPath(docId);
+        const fullPath = path.join(docPath, fsPath);
+        
+        fs.writeFileSync(fullPath, content);
+        return true;
+    } catch(err) {
+        console.error('File write error:', err);
+        return false;
+    }
+}
+
+// Commit to git (called after debounce or manual save)
+async function commitToGit(docId) {
+    // Check if already committing
+    if (gitLocks.get(docId)) {
+        return;
+    }
+    
+    gitLocks.set(docId, true);
+    
+    try {
+        const docRes = await db.query('SELECT fs_path FROM documents WHERE id = $1', [docId]);
+        if (docRes.rows.length === 0) {
+            gitLocks.delete(docId);
+            return;
+        }
+        
+        const fsPath = docRes.rows[0].fs_path;
+        const git = getDocumentGit(docId);
+        const status = await git.status();
+        
+        if (status.modified.includes(fsPath) || status.not_added.includes(fsPath)) {
+            await git.add(fsPath);
+            await git.commit(`Update document`);
+        }
+    } catch(err) {
+        console.error('Git commit error:', err);
+    } finally {
+        gitLocks.delete(docId);
+    }
+}
+
+// Queue file write with debouncing
+function queueFileWrite(docId, content, immediateGit = false) {
+    // Clear existing timeout
+    if (fileWriteQueue.has(docId)) {
+        clearTimeout(fileWriteQueue.get(docId).timeout);
+    }
+    
+    // Write to file immediately (no debounce for file writes)
+    writeFileToDisk(docId, content);
+    
+    // Handle git commit
+    if (immediateGit) {
+        // Manual save - commit immediately
+        clearTimeout(gitCommitTimers.get(docId));
+        gitCommitTimers.delete(docId);
+        commitToGit(docId);
+    } else {
+        // Auto-save - debounce git commit for 1 minute
+        clearTimeout(gitCommitTimers.get(docId));
+        
+        const timer = setTimeout(() => {
+            commitToGit(docId);
+            gitCommitTimers.delete(docId);
+        }, 60000); // 1 minute
+        
+        gitCommitTimers.set(docId, timer);
+    }
+}
 
 // Get user's role for a document
 async function getUserDocumentRole(userId, documentId) {
@@ -407,7 +487,7 @@ async function getUserDocumentRole(userId, documentId) {
   }
 }
 
-// Save Document
+// Save Document (auto-save - file write immediately, git commit debounced)
 app.post('/api/documents/:id/save', async (req, res) => {
     const { id } = req.params;
     const { content, userId } = req.body;
@@ -418,41 +498,27 @@ app.post('/api/documents/:id/save', async (req, res) => {
         return res.status(403).json({ error: 'Forbidden: You do not have write permission for this document' });
     }
     
-    // Check if there's already a save in progress for this document
-    if (gitLocks.get(id)) {
-        return res.json({ success: true, queued: true }); // Silently ignore if already saving
+    // Queue file write (immediate) and git commit (debounced)
+    queueFileWrite(id, content, false);
+    
+    res.json({ success: true });
+});
+
+// Manual Save (high priority - immediate file write and git commit)
+app.post('/api/documents/:id/save-now', async (req, res) => {
+    const { id } = req.params;
+    const { content, userId } = req.body;
+    
+    // Check permissions
+    const role = await getUserDocumentRole(userId, id);
+    if (!role || (role !== 'owner' && role !== 'writer')) {
+        return res.status(403).json({ error: 'Forbidden: You do not have write permission for this document' });
     }
     
-    gitLocks.set(id, true);
+    // Immediate file write and git commit
+    queueFileWrite(id, content, true);
     
-    try {
-        const docRes = await db.query('SELECT fs_path FROM documents WHERE id = $1', [id]);
-        if (docRes.rows.length === 0) {
-            gitLocks.delete(id);
-            return res.status(404).send('Doc not found');
-        }
-        
-        const fsPath = docRes.rows[0].fs_path;
-        const docPath = getDocumentPath(id);
-        const fullPath = path.join(docPath, fsPath);
-        
-        fs.writeFileSync(fullPath, content);
-        
-        // Git commit if changed
-        const git = getDocumentGit(id);
-        const status = await git.status();
-        if (status.modified.includes(fsPath) || status.not_added.includes(fsPath)) {
-            await git.add(fsPath);
-            await git.commit(`Update document`);
-        }
-        
-        gitLocks.delete(id);
-        res.json({ success: true });
-    } catch(err) {
-        console.error(err);
-        gitLocks.delete(id);
-        res.status(500).json({ error: err.message });
-    }
+    res.json({ success: true });
 });
 
 
